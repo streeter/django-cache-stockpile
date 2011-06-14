@@ -1,9 +1,5 @@
 from django.conf import settings
 
-# Logging
-import logging
-log = logging.getLogger(__name__)
-
 # Testing and Debug settings
 TESTING = getattr(settings, 'STOCKPILE_TESTING', False)
 DEBUG = getattr(settings, 'DEBUG', False) and not TESTING
@@ -13,6 +9,7 @@ ENABLED = True
 
 # Cache Prefix
 PREFIX = getattr(settings, 'CACHE_PREFIX', '')
+PREFIX_FLUSH = 'flush:'
 
 # Cache Timeouts
 TIMEOUT_DEFAULT = getattr(settings, 'CACHE_TIMEOUT', 60)
