@@ -1,6 +1,5 @@
 from stockpile import conf
 from django.test import TestCase
-from stockpile.models import get_ticket
 
 
 class StockpileTest(TestCase):
