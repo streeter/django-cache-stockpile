@@ -14,6 +14,4 @@ KEY_PREFIX = getattr(settings, 'KEY_PREFIX', '')
 VERSION = getattr(settings, 'VERSION', 1)
 
 # Cache Timeouts
-TIMEOUT_DEFAULT = getattr(settings, 'CACHE_TIMEOUT', 60)
-TIMEOUT_INFINITY = 0
-TIMEOUT_NO_CACHE = -1
+TIMEOUT = getattr(settings, 'CACHE_TIMEOUT', 60)

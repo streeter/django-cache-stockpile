@@ -25,7 +25,7 @@ class CachedManager(models.manager.Manager):
                 o.from_cache = True
         if not conf.ENABLED or not o:
             o = self.get_query_set().get(*args, **kwargs)
-            conf.ENABLED and cache.set(key, o)
+            conf.ENABLED and cache.set(key, o, conf.TIMEOUT)
         return o
     
     def id_in(self, ids):
@@ -42,7 +42,7 @@ class CachedManager(models.manager.Manager):
             missed=ids
         
         keys = dict((o.cache_key, o) for o in self.filter(id__in=missed))
-        conf.ENABLED and cache.set_many(keys)
+        conf.ENABLED and cache.set_many(keys, conf.TIMEOUT)
         
         return objs.values() + keys.values()
     
