@@ -1,6 +1,11 @@
 import hashlib
+import collections
 from stockpile import conf
+from django.core.cache import cache
 from django.utils import encoding, translation
+
+import logging
+log = logging.getLogger(__name__)
 
 
 def make_key(k, with_locale=True):
@@ -16,7 +21,7 @@ def make_key(k, with_locale=True):
 def make_flush_key(obj):
     """We put flush lists in the flush: namespace."""
     key = obj if isinstance(obj, basestring) else obj.cache_key
-    return FLUSH + make_key(key, with_locale=False)
+    return conf.PREFIX_FLUSH + make_key(key, with_locale=False)
 
 
 ###############################################################################
@@ -29,17 +34,20 @@ class Invalidator(object):
         if not keys:
             return
         flush, flush_keys = self.find_flush_lists(keys)
-
+        
         if flush:
+            log.debug('invalidating a bunch of keys: %s' % flush)
             cache.set_many(dict((k, None) for k in flush), 5)
         if flush_keys:
             self.clear_flush_lists(flush_keys)
 
     def cache_objects(self, objects, query_key, query_flush):
+        # For each object in objects, a
+        
         # Add this query to the flush list of each object.  We include
         # query_flush so that other things can be cached against the queryset
         # and still participate in invalidation.
-        flush_keys = [o.flush_key() for o in objects]
+        flush_keys = [o.flush_key for o in objects]
 
         flush_lists = collections.defaultdict(set)
         for key in flush_keys:
@@ -48,30 +56,28 @@ class Invalidator(object):
 
         # Add each object to the flush lists of its foreign keys.
         for obj in objects:
-            obj_flush = obj.flush_key()
-            for key in map(flush_key, obj._cache_keys()):
+            obj_flush = obj.flush_key
+            for key in map(make_flush_key, obj.cache_keys):
                 if key != obj_flush:
                     flush_lists[key].add(obj_flush)
-                if FETCH_BY_ID:
-                    flush_lists[key].add(byid(obj))
         self.add_to_flush_list(flush_lists)
 
     def find_flush_lists(self, keys):
         """
         Recursively search for flush lists and objects to invalidate.
-
+        
         The search starts with the lists in `keys` and expands to any flush
         lists found therein.  Returns ({objects to flush}, {flush keys found}).
         """
-        new_keys = keys = set(map(flush_key, keys))
+        new_keys = keys = set(map(make_flush_key, keys))
         flush = set(keys)
-
+        
         # Add other flush keys from the lists, which happens when a parent
         # object includes a foreign key.
         while 1:
             to_flush = self.get_flush_lists(new_keys)
             flush.update(to_flush)
-            new_keys = set(k for k in to_flush if k.startswith(FLUSH))
+            new_keys = set(k for k in to_flush if k.startswith(conf.PREFIX_FLUSH))
             diff = new_keys.difference(keys)
             if diff:
                 keys.update(new_keys)

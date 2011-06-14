@@ -1,10 +1,13 @@
 from django.db import models
-from django.core.cache import cache, parse_backend_uri
+from django.core.cache import cache
 from stockpile import conf
 from stockpile.utils import make_key, make_flush_key, invalidator
 
+import logging
+log = logging.getLogger(__name__)
 
-class FakeQuerySet(object):
+
+class CachedIterator(object):
     """
     Handles all the cache management for a QuerySet.
     
@@ -22,22 +25,22 @@ class FakeQuerySet(object):
         return make_key('qs:%s' % self.query_string, with_locale=False)
     
     def __iter__(self):
-        #try:
-        #    query_key = self.query_key()
-        #except query.EmptyResultSet:
-        #    raise StopIteration
+        try:
+            query_key = self.query_key()
+        except query.EmptyResultSet:
+            raise StopIteration
         query_key = self.query_key()
         
         # Try to fetch from the cache.
         cached = cache.get(query_key)
         if cached is not None:
-            log.debug('cache hit: %s' % self.query_string)
+            log.debug('cache hit: %s' % self.query_key())
             for obj in cached:
                 obj.from_cache = True
                 yield obj
             return
         
-        log.debug('cache miss: %s' % self.query_string)
+        log.debug('cache miss: %s' % self.query_key())
         
         # Do the database query, cache it once we have all the objects.
         iterator = self.iter_function()
@@ -46,7 +49,6 @@ class FakeQuerySet(object):
         try:
             while True:
                 obj = iterator.next()
-                obj.from_cache = False
                 to_cache.append(obj)
                 yield obj
         except StopIteration:
@@ -59,47 +61,50 @@ class FakeQuerySet(object):
         """Cache query_key => objects, then update the flush lists."""
         query_key = self.query_key()
         flush_key = make_flush_key(self.query_string)
+        # Cache the results of this query for future queries
         cache.add(query_key, objects, timeout=self.timeout)
-        invalidator.cache_objects(objects, query_key, query_flush)
+        # For each result object, add this query's cache_key to the
+        # list of things that need to be flushed when that object's cache
+        # is invalidated
+        invalidator.cache_objects(objects, query_key, flush_key)
 
 
-class StockpileCachedQuerySet(models.query.QuerySet):
+class CachedQuerySet(models.query.QuerySet):
     
     def __init__(self, *args, **kwargs):
-        super(StockpileCachedQuerySet, self).__init__(*args, **kwargs)
-        self.timeout = None
+        super(CachedQuerySet, self).__init__(*args, **kwargs)
+        self.timeout = conf.TIMEOUT_DEFAULT
     
-    def flush_key(self):
-        return flush_key(self.query_key())
-    
-    def query_key(self):
+    def _query_string(self):
         sql, params = self.query.get_compiler(using=self.db).as_sql()
         return sql % params
     
     def iterator(self):
-        iterator = super(StockpileCachedQuerySet, self).iterator
+        iterator = super(CachedQuerySet, self).iterator
         if self.timeout == conf.TIMEOUT_NO_CACHE or not conf.ENABLED:
             return iter(iterator())
         else:
+            # Get the query string to use as the cache key for this
+            # result set.
             try:
-                query_string = self.query_key()
+                query_string = self._query_string()
             except query.EmptyResultSet:
                 return iterator()
-            return iter(FakeQuerySet(query_string, iterator, self.timeout))
+            return iter(CachedIterator(query_string, iterator, self.timeout))
     
-    def fetch_by_id(self):
-        # TODO
-        pass
     
     def cache(self, timeout=None):
+        """Return a clone with a specifed timeout."""
         qs = self._clone()
         qs.timeout = timeout
         return qs
     
-    def no_cache(self):
+    def nocache(self):
+        """Return a clone with a no cache timeout."""
         return self.cache(conf.TIMEOUT_NO_CACHE)
     
     def _clone(self, *args, **kwargs):
-        qs = super(StockpileCachedQuerySet, self)._clone(*args, **kwargs)
+        """Return a clone of this CachedQuerySet, with identical local props"""
+        qs = super(CachedQuerySet, self)._clone(*args, **kwargs)
         qs.timeout = self.timeout
         return qs
