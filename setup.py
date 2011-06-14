@@ -19,12 +19,12 @@ class mytest(test):
         # test.run(self, *args, **kwargs)
 
 setup(
-    name='django-stockpile',
+    name='django-cache-stockpile',
     version=stockpile.__version__,
     author='Chris Streeter',
     author_email='pypi@chrisstreeter.com',
-    url='http://github.com/streeter/django-ticketing',
-    description = 'Generate tickets efficiently in a database in Django',
+    url='http://github.com/streeter/django-cache-stockpile',
+    description = 'A simple django ORM caching layer.',
     long_description=open('README.markdown').read(),
     packages=find_packages(),
     license='BSD',
