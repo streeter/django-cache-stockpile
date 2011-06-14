@@ -38,5 +38,5 @@ Get it from `github <http://github.com/streeter/django-stockpile>`_::
 git clone git://github.com/streeter/django-stockpile.git
 cd django-stockpile
 pip install -r requirements.txt
-./runtests.sh
+python runtests.py
 ```
