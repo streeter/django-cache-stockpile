@@ -18,13 +18,13 @@ Stockpile requires Django 1.3.  It was written and tested on Python 2.6.
 Installation
 ------------
 
-Get it from `pypi <http://pypi.python.org/pypi/django-cache-stockpile>`:
+Get it from [pypi](http://pypi.python.org/pypi/django-cache-stockpile):
 
 ```bash
 pip install django-cache-stockpile
 ```
 
-or `github <http://github.com/streeter/django-cache-stockpile>`:
+or [github](http://github.com/streeter/django-cache-stockpile):
 
 ```bash
 pip install -e git://github.com/streeter/django-cache-stockpile.git#egg=django-cache-stockpile
@@ -33,8 +33,6 @@ pip install -e git://github.com/streeter/django-cache-stockpile.git#egg=django-c
 
 Running Tests
 -------------
-
-Get it from `github <http://github.com/streeter/django-cache-stockpile>`:
 
 ```bash
 git clone git://github.com/streeter/django-cache-stockpile.git
