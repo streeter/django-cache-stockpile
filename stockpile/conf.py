@@ -8,7 +8,10 @@ DEBUG = getattr(settings, 'DEBUG', False) and not TESTING
 ENABLED = True
 
 # Cache Prefix
-PREFIX = getattr(settings, 'CACHE_PREFIX', '')
+KEY_PREFIX = getattr(settings, 'KEY_PREFIX', '')
+
+# Cache Version
+VERSION = getattr(settings, 'VERSION', 1)
 
 # Cache Timeouts
 TIMEOUT_DEFAULT = getattr(settings, 'CACHE_TIMEOUT', 60)
