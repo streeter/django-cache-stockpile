@@ -24,12 +24,15 @@ if not settings.configured:
         #},
         INSTALLED_APPS=[
             'stockpile',
+            'stockpile.tests',
         ],
         ROOT_URLCONF='',
         DEBUG=False,
         STOCKPILE_TESTING=True,
     )
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 def runtests(*test_args):
     if 'south' in settings.INSTALLED_APPS:
