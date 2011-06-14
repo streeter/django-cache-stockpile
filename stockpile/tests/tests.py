@@ -31,60 +31,47 @@ class StockpileTest(TestCase):
         assert not a.from_cache
     
     def test_cache_hit(self):
-        a = Account.objects.get(pk=1)
-        assert a.pk > 0
-        assert not a.from_cache
-        
-        a2 = Account.objects.get(pk=1)
-        assert a.pk == a2.pk
-        assert a2.from_cache
+        assert Account.objects.get(pk=1).from_cache is False
+        assert Account.objects.get(pk=1).from_cache is True
     
     def test_cache_invalidate(self):
+        assert Account.objects.get(pk=2).from_cache is False
         a = Account.objects.get(pk=2)
-        assert not a.from_cache
-        
-        a2 = Account.objects.get(pk=2)
-        assert a.pk == a2.pk
-        assert a2.from_cache
+        assert a.from_cache
         
         a.name = 'something else'
         a.save()
         
-        a3 = Account.objects.get(pk=2)
-        assert a.pk == a3.pk and a2.pk == a3.pk
-        assert not a3.from_cache
+        assert Account.objects.get(pk=2).from_cache is False
     
     def test_reverse_broken(self):
         a = Account.objects.get(pk=1)
+        assert a.from_cache is False
         d = DummyInfo.objects.get(pk=1)
-        assert not d.account1.from_cache
+        assert d.account1.from_cache is False
         d.account1 = Account.objects.get(pk=1)
-        assert d.account1.from_cache
+        assert d.account1.from_cache is True
     
     def test_pk_in_uncached(self):
         objects = Account.objects.pk_in([1, 2, 3])
-        assert len(objects) == 3
-        for o in objects:
-            assert not o.from_cache
+        assert len([o for o in objects if o.from_cache]) == 0
     
     def test_pk_in_single_cached(self):
         a = Account.objects.get(pk=1)
-        assert not a.from_cache
+        assert a.from_cache is False
         objects = Account.objects.pk_in([1, 2, 3])
         assert len(objects) == 3
         for o in objects:
             if o.id == a.id:
-                assert o.from_cache
+                assert o.from_cache is True
             else:
-                assert not o.from_cache
+                assert o.from_cache is False
     
     def test_pk_in_cached(self):
         objects = Account.objects.pk_in([1, 2, 3])
-        assert len(objects) == 3
-        for o in objects:
-            assert not o.from_cache
+        assert len([o for o in objects if o.from_cache]) == 0
+        assert len([o for o in objects if not o.from_cache]) == 3
         
         objects = Account.objects.pk_in([1, 2, 3])
-        assert len(objects) == 3
-        for o in objects:
-            assert o.from_cache
+        assert len([o for o in objects if o.from_cache]) == 3
+        assert len([o for o in objects if not o.from_cache]) == 0
