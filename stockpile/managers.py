@@ -8,12 +8,12 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class StockpileCacheManager(models.manager.Manager):
+class CachedManager(models.manager.Manager):
     """
     A manager to store and retrieve cached objects.
     """
     def __init__(self, *args, **kwargs):
-        super(StockpileCacheManager, self).__init__(*args, **kwargs)
+        super(CachedManager, self).__init__(*args, **kwargs)
     
     def get(self, *args, **kwargs):
         if 'id' not in kwargs and 'pk' not in kwargs:
@@ -53,7 +53,7 @@ class StockpileCacheManager(models.manager.Manager):
     def contribute_to_class(self, cls, name):
         models.signals.post_save.connect(self.post_save, sender=cls)
         models.signals.post_delete.connect(self.post_delete, sender=cls)
-        return super(StockpileCacheManager, self).contribute_to_class(cls, name)
+        return super(CachedManager, self).contribute_to_class(cls, name)
     
     def post_save(self, instance, **kwargs):
         self.invalidate(instance)

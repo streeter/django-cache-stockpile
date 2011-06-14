@@ -1,10 +1,10 @@
 from django.db import models
 from django.utils import encoding
-from stockpile.managers import StockpileCacheManager
+from stockpile.managers import CachedManager
 from stockpile.utils import make_flush_key
 
 
-class StockpileModel(models.Model):
+class CachedModel(models.Model):
     """
     A model that can be inherited from to provide caching.
     """
@@ -17,7 +17,7 @@ class StockpileModel(models.Model):
         opts = cls._meta
         opts._prepare(cls)
         
-        cls.add_to_class('objects', StockpileCacheManager())
+        cls.add_to_class('objects', CachedManager())
         cls.add_to_class('nocache', models.manager.Manager())
         # TODO - make this configurable
         cls.add_to_class('_default_manager', cls.nocache)
