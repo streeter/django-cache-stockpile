@@ -1,8 +1,6 @@
 from django.db import models
 from django.core.cache import cache
 from stockpile import conf
-from stockpile.query import CachedQuerySet
-from stockpile.utils import invalidator
 
 import logging
 log = logging.getLogger(__name__)
@@ -57,7 +55,7 @@ class CachedManager(models.manager.Manager):
     
     def post_save(self, instance, **kwargs):
         self.invalidate(instance)
-
+    
     def post_delete(self, instance, **kwargs):
         self.invalidate(instance)
     
@@ -65,21 +63,3 @@ class CachedManager(models.manager.Manager):
         keys = dict((o.cache_key, None) for o in objects)
         #log.debug('Invalidating keys: %s' % keys)
         cache.set_many(keys)
-        
-        #keys = [k for o in objects for k in o.cache_keys]
-        #invalidator.invalidate_keys(keys)
-    
-    #def get_query_set(self):
-    #    return CachedQuerySet(model=self.model)
-    #
-    #def cache(self, *args, **kwargs):
-    #    return self.get_query_set().cache(*args, **kwargs)
-    #
-    #def clean(self, *args, **kwargs):
-    #    # Use reset instead if you are using memcached, as clean makes no
-    #    # sense (extra bandwidth when
-    #    # memcached will automatically clean iself).
-    #    return self.get_query_set().clean(*args, **kwargs)
-    #
-    #def reset(self, *args, **kwargs):
-    #    return self.get_query_set().reset(*args, **kwargs)

@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import encoding
 from stockpile.managers import CachedManager
-from stockpile.utils import make_flush_key
 
 
 class CachedModel(models.Model):
@@ -32,19 +31,6 @@ class CachedModel(models.Model):
     @property
     def cache_key(self):
         return self._cache_key(self.pk)
-    
-    @property
-    def cache_keys(self):
-        fks = dict((f, getattr(self, f.attname)) for f in self._meta.fields
-                    if isinstance(f, models.ForeignKey))
-        
-        keys = [fk.rel.to._cache_key(val) for fk, val in fks.items()
-                if val is not None and hasattr(fk.rel.to, '_cache_key')]
-        return (self.cache_key,) + tuple(keys)
-    
-    @property
-    def flush_key(self):
-        return make_flush_key(self)
     
     def _get_from_cache(self):
         if hasattr(self, '_from_cache'):
